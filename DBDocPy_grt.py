@@ -40,67 +40,96 @@ ModuleInfo = DefineModule(name="DBDocPy", author="Rodrigo Schmidt Nurmberg", ver
 @ModuleInfo.plugin("rsn86.DBDocPy.htmlDataDictionary", caption="DBDoc: As HTML File", description="Data Dictionary as HTML", input=[wbinputs.currentCatalog()], pluginMenu="Catalog")
 @ModuleInfo.export(grt.INT, grt.classes.db_Catalog)
 def htmlDataDictionary(catalog):
-  # Put plugin contents here
-  htmlOut = ""
-  filechooser = FileChooser(mforms.SaveFile)
-  if filechooser.run_modal():
-    htmlOut = filechooser.get_path()
-    print "HTML File: %s" % (htmlOut)
-  if len(htmlOut) <= 1:
-    return 1
+	# Put plugin contents here
+	htmlOut = ""
+	filechooser = FileChooser(mforms.SaveFile)
+	if filechooser.run_modal():
+		htmlOut = filechooser.get_path()
+		print "HTML File: %s" % (htmlOut)
+	if len(htmlOut) <= 1:
+		return 1
 
-  # iterate through columns from schema
-  schema = catalog.schemata[0]
-  htmlFile = open(htmlOut, "w")
-  print >>htmlFile, "<html><head>"
-  print >>htmlFile, "<title>Data dictionary: %s</title>" % (schema.name)
-  print >>htmlFile, """<style>
-    td,th {
-      text-align:center; 
-      vertical-align:middle;
-    }
-    table {
-      border-collapse: collapse;
-    }
-    caption, th, td {
-      padding: .2em .8em;
-      border: 1px solid #fff;
-    }
-    caption {
-      background: #dbb768;
-      font-weight: bold;
-      font-size: 1.1em;
-    }
-    th {
-      font-weight: bold;
-      background: #f3ce7d;
-    }
-    td {
-      background: #ffea97;
-    }
-  </style>
-</head>
-<body>"""
-  for table in schema.tables:
-    print >>htmlFile, "<table><caption>Table: %s - %s</caption>" % (table.name, table.comment)
-    print >>htmlFile, """<tr><td colspan=\"7\">Attributes</td></tr>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Not Null</th>
-<th>PK</th>
-<th>FK</th>
-<th>Default</th>
-<th>Comment</th>
-</tr>"""
-    for column in table.columns:
-      pk = ('No', 'Yes')[bool(table.isPrimaryKeyColumn(column))]
-      fk = ('No', 'Yes')[bool(table.isForeignKeyColumn(column))]
-      nn = ('No', 'Yes')[bool(column.isNotNull)]
-      print >>htmlFile, "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>" % (column.name,column.formattedType,nn,pk,fk,column.defaultValue,column.comment)
-    print >>htmlFile, "</table></br>"
-  print >>htmlFile, "</body></html>"
-  return 0
+	htmlFile = open(htmlOut, "w")
+	print >>htmlFile, """
+<html>
+	<head>
+		<title></title>
+		<script src='http://cdn.bootcss.com/jquery/1.12.4/jquery.min.js'></script>
+		<link href="http://cdn.bootcss.com/jqueryui/1.12.1/jquery-ui.min.css" rel="stylesheet">
+		<script src="http://cdn.bootcss.com/jqueryui/1.12.1/jquery-ui.min.js"></script>
+		<script type='text/javascript'>
+			$(function(){
+				$('#schemas').tabs();
+			});
+		</script>
+		<style>
+			td,th {
+				text-align:left; 
+				vertical-align:middle;
+			}
+			table {
+				width: 100%;
+				border-collapse: collapse;
+			}
+			table tbody {
+				width: 100%;
+			}
+			caption, th, td {
+				padding: .2em .8em;
+				border: 1px solid #fff;
+			}
+			caption {
+				text-align: left;
+				background: #dbb768;
+				font-weight: bold;
+				font-size: 1.1em;
+			}
+			th {
+				font-weight: bold;
+				background: #f3ce7d;
+			}
+			td {
+				background: #ffea97;
+			}
+			#schemas div {
+				padding: 0;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="schemas">
+			<ul>
+"""
+	for schema in catalog.schemata:
+		print >>htmlFile, '<li><a href="#tabs-%s">%s</a></li>' % (schema.name, schema.name)
+	print >>htmlFile, '</ul>'
+	for schema in catalog.schemata:
+		print >>htmlFile, '<div id="tabs-%s">' % (schema.name)
+		  
+		for table in schema.tables:
+			print >>htmlFile, "<table><caption>[Table] %s - %s</caption>" % (table.name, table.comment)
+			print >>htmlFile, """
+				<tr>
+				<th>Name</th>
+				<th>Type</th>
+				<th>Not Null</th>
+				<th>PK</th>
+				<th>FK</th>
+				<th>Default</th>
+				<th>Comment</th>
+				</tr>"""
+			for column in table.columns:
+				pk = ('No', 'Yes')[bool(table.isPrimaryKeyColumn(column))]
+				fk = ('No', 'Yes')[bool(table.isForeignKeyColumn(column))]
+				nn = ('No', 'Yes')[bool(column.isNotNull)]
+				print >>htmlFile, "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>" % (column.name,column.formattedType,nn,pk,fk,column.defaultValue,column.comment)
+			print >>htmlFile, "</table></br>"
+		
+		print >>htmlFile, "</div>"
+	print >>htmlFile, '<div>'
+
+	print >>htmlFile, "</body></html>"
+	return 0
 
 @ModuleInfo.plugin("rsn86.DBDocPy.consoleDataDictionary", caption="DBDoc: Output to console", description="Data Dictionary as Text", input=[wbinputs.currentCatalog()], pluginMenu="Catalog")
 @ModuleInfo.export(grt.INT, grt.classes.db_Catalog)
